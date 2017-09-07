@@ -119,7 +119,7 @@ function traperror() {
 # catch errors
 trap 'traperror "$? ${PIPESTATUS[@]}" $LINENO $BASH_LINENO "$BASH_COMMAND" "${FUNCNAME[@]}" "${FUNCTION}"' ERR SIGINT INT TERM EXIT
 
-##########################################################################################
+###########################################################################################
 
 # wait for mysql to become ready
 if test -n "${MYSQL_ENV_MYSQL_PASSWORD:-$MYSQL_PASSWORD}"; then
