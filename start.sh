@@ -122,19 +122,20 @@ trap 'traperror "$? ${PIPESTATUS[@]}" $LINENO $BASH_LINENO "$BASH_COMMAND" "${FU
 ##########################################################################################
 
 # wait for mysql to become ready
-for ((i=0; i<20; ++i)); do
-    if nmap -p ${MYSQL_PORT_3306_TCP_PORT} ${MYSQL_PORT_3306_TCP_ADDR} \
-        | grep -q ${MYSQL_PORT_3306_TCP_PORT}'/tcp open'; then
-        break;
-    fi
-    sleep 1
-done
+if test -n "${MYSQL_ENV_MYSQL_PASSWORD:-$MYSQL_PASSWORD}"; then
+    echo "wait ${WAIT_SECONDS_FOR_MYSQL:-300}s for mysql to become ready"
+    for ((i=0; i<${WAIT_SECONDS_FOR_MYSQL:-300}; ++i)); do
+        if mysql -e "select 1" -h mysql -u "${MYSQL_ENV_MYSQL_USER:-${MYSQL_USER:-nextcloud}}" -p"${MYSQL_ENV_MYSQL_PASSWORD:-$MYSQL_PASSWORD}" "${MYSQL_ENV_MYSQL_DATABASE:-${MYSQL_DATABASE:-nextcloud}}" 2> /dev/null > /dev/null; then
+            echo "mysql is ready"
+            break;
+        fi
+        sleep 1
+    done
+fi
 
 if test -e /firstrun; then
     echo "Configuration of Icinga ..."
-    if test -z "${MYSQL_ENV_MYSQL_DATABASE}" \
-        -o -z "${MYSQL_ENV_MYSQL_USER}" \
-        -o -z "${MYSQL_ENV_MYSQL_PASSWORD}"; then
+    if test -z "${MYSQL_ENV_MYSQL_PASSWORD:-${MYSQL_PASSWORD}}"; then
         cat 1>&2 <<EOF
 **** no valid mysql configuration found"
       - you must link to a MySQL docker container and name it mysql
@@ -150,7 +151,7 @@ Example:
          mysql
   docker run -d --restart always --name icinga \
              --link icinga-mysql:mysql \
-         mwaeckerlin/icinga
+         mwaeckerlin/icinga2ido
 EOF
             exit 1
     fi
@@ -163,13 +164,13 @@ EOF
 library "db_ido_mysql"
 
 object IdoMysqlConnection "ido-mysql" {
-  user = "${MYSQL_ENV_MYSQL_USER}",
-  password = "${MYSQL_ENV_MYSQL_PASSWORD}",
+  user = "${MYSQL_ENV_MYSQL_USER:-${MYSQL_USER:-icinga}}",
+  password = "${MYSQL_ENV_MYSQL_PASSWORD:-${MYSQL_PASSWORD}}",
   host = "mysql",
-  database = "${MYSQL_ENV_MYSQL_DATABASE}"
+  database = "${MYSQL_ENV_MYSQL_DATABASE:-${MYSQL_DATABASE:-icinga}}"
 }
 EOF
-    mysql -h mysql -u ${MYSQL_ENV_MYSQL_USER} -p${MYSQL_ENV_MYSQL_PASSWORD} ${MYSQL_ENV_MYSQL_DATABASE} < /usr/share/icinga2-ido-mysql/schema/mysql.sql
+    mysql -h mysql -u ${MYSQL_ENV_MYSQL_USER:-${MYSQL_USER:-icinga}} -p${MYSQL_ENV_MYSQL_PASSWORD:-${MYSQL_PASSWORD}} ${MYSQL_ENV_MYSQL_DATABASE:-${MYSQL_DATABASE:-icinga}} < /usr/share/icinga2-ido-mysql/schema/mysql.sql
     chown nagios.nagios /etc/icinga2/features-available/ido-mysql.conf
     chmod go= /etc/icinga2/features-available/ido-mysql.conf
     icinga2 feature enable ido-mysql

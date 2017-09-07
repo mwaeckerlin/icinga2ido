@@ -4,8 +4,8 @@
 
         docker run -d --name icinga-mysql-volume mysql
         docker run -d --name icinga-mysql -e MYSQL_RANDOM_ROOT_PASSWORD=1 -e MYSQL_DATABASE=icinga -e MYSQL_USER=icinga -e MYSQL_PASSWORD=$(pwgen 20 1) --volumes-from icinga-mysql-volume mysql
-        docker run -d --name icinga-volumes mwaeckerlin/icinga
-        docker run -d --name icinga --link icinga-mysql:mysql --volumes-from icinga-volumes mwaeckerlin/icinga
+        docker run -d --name icinga-volumes mwaeckerlin/icinga2ido
+        docker run -d --name icinga --link icinga-mysql:mysql --volumes-from icinga-volumes mwaeckerlin/icinga2ido
         docker run -d --name icingaweb-volumes mwaeckerlin/icingaweb2
         docker run -d --name icingaweb --link icinga-mysql:mysql --volumes-from icinga-volumes --volumes-from icingaweb-volumes -p 80:80 mwaeckerlin/icingaweb2
 
