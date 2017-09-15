@@ -125,7 +125,7 @@ trap 'traperror "$? ${PIPESTATUS[@]}" $LINENO $BASH_LINENO "$BASH_COMMAND" "${FU
 if test -n "${MYSQL_ENV_MYSQL_PASSWORD:-$MYSQL_PASSWORD}"; then
     echo "wait ${WAIT_SECONDS_FOR_MYSQL:-300}s for mysql to become ready"
     for ((i=0; i<${WAIT_SECONDS_FOR_MYSQL:-300}; ++i)); do
-        if mysql -e "select 1" -h mysql -u "${MYSQL_ENV_MYSQL_USER:-${MYSQL_USER:-nextcloud}}" -p"${MYSQL_ENV_MYSQL_PASSWORD:-$MYSQL_PASSWORD}" "${MYSQL_ENV_MYSQL_DATABASE:-${MYSQL_DATABASE:-nextcloud}}" 2> /dev/null > /dev/null; then
+        if mysql -e "select 1" -h mysql -u "${MYSQL_ENV_MYSQL_USER:-${MYSQL_USER:-icinga}}" -p"${MYSQL_ENV_MYSQL_PASSWORD:-$MYSQL_PASSWORD}" "${MYSQL_ENV_MYSQL_DATABASE:-${MYSQL_DATABASE:-icinga}}" 2> /dev/null > /dev/null; then
             echo "mysql is ready"
             break;
         fi
