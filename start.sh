@@ -135,7 +135,8 @@ fi
 
 if test -e /firstrun; then
     echo "Configuration of Icinga ..."
-    if test -z "${MYSQL_ENV_MYSQL_PASSWORD:-${MYSQL_PASSWORD}}"; then
+    if test -z "${MYSQL_ENV_MYSQL_PASSWORD:-${MYSQL_PASSWORD}}" -o \
+            -z "${MYSQL_ENV_MYSQL_ROOT_PASSWORD:-${MYSQL_ROOT_PASSWORD}}"; then
         cat 1>&2 <<EOF
 **** no valid mysql configuration found"
       - you must link to a MySQL docker container and name it mysql
@@ -143,15 +144,17 @@ if test -e /firstrun; then
       - mysql server must have a database configured
 
 Example:
-  docker run -d --restart always --name icinga-mysql \
-             -e MYSQL_RANDOM_ROOT_PASSWORD=1 \
-             -e MYSQL_DATABASE=icinga \
-             -e MYSQL_USER=icinga \
-             -e MYSQL_PASSWORD=$(pwgen 20 1) \
+
+  docker run -d --restart always --name icinga-mysql \\
+             -e MYSQL_ROOT_PASSWORD=$(pwgen 20 1) \\
+             -e MYSQL_DATABASE=icinga \\
+             -e MYSQL_USER=icinga \\
+             -e MYSQL_PASSWORD=$(pwgen 20 1) \\
          mysql
-  docker run -d --restart always --name icinga \
-             --link icinga-mysql:mysql \
+  docker run -d --restart always --name icinga \\
+             --link icinga-mysql:mysql \\
          mwaeckerlin/icinga2ido
+
 EOF
             exit 1
     fi
@@ -181,6 +184,35 @@ EOF
     echo "**** Configuration done."
     echo "IDO database is:"
     cat /etc/icinga2/features-available/ido-mysql.conf
+    if test -z "${DIRECTOR_PW}"; then
+        DIRECTOR_PW=$(pwgen 20 1)
+    fi
+    if test -z "${WEB_PW}"; then
+        WEB_PW=$(pwgen 20 1)
+    fi
+    mysql -h mysql -u root -p"${MYSQL_ENV_MYSQL_ROOT_PASSWORD:-${MYSQL_ROOT_PASSWORD}}" <<EOF
+CREATE DATABASE ${DIRECTOR_DB:-director} CHARACTER SET 'utf8';
+CREATE DATABASE ${WEB_DB:-icingaweb} CHARACTER SET 'utf8';
+GRANT ALL ON ${DIRECTOR_DB:-director}.* TO ${DIRECTOR_USER:-director}@'%' IDENTIFIED BY '${DIRECTOR_PW}';
+GRANT ALL ON ${WEB_DB:-icingaweb}.* TO ${WEB_USER:-director}@'%' IDENTIFIED BY '${WEB_PW}';
+FLUSH PRIVILEGES;
+EOF
+    icinga2 api setup
+    cat >> /etc/icinga2/conf.d/api-users.conf <<EOF
+object ApiUser "${DIRECTOR_USER:-director}" {
+  password = "${DIRECTOR_PW}"
+  permissions = [ "*" ]
+}
+EOF
+    echo "Web database:               ${WEB_DB:-icingaweb}"
+    echo "Web database user:          ${WEB_USER:-icingaweb}"
+    echo "Web database password:      ${WEB_PW}"
+    echo "Director module user:       ${DIRECTOR_USER:-director}"
+    echo "Director module password:   ${DIRECTOR_PW}"
+    echo "Director database:          ${DIRECTOR_DB:-director}"
+    echo "Director database user:     ${DIRECTOR_USER:-director}"
+    echo "Director database password: ${DIRECTOR_PW}"
+    echo "Director endpoint:          $(ls /etc/icinga2/pki | sed -n 's/.key//p')"
 fi
 echo "starting icinga2"
 /usr/sbin/icinga2 --no-stack-rlimit daemon -e /var/log/icinga2/icinga2.err
