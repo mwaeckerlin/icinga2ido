@@ -121,6 +121,9 @@ trap 'traperror "$? ${PIPESTATUS[@]}" $LINENO $BASH_LINENO "$BASH_COMMAND" "${FU
 
 ###########################################################################################
 
+# restore file structure in case an empty volume is mounted
+test -d /etc/icinga2/features-available || apt install --reinstall -y icinga2-common
+
 # wait for mysql to become ready
 if test -n "${MYSQL_ENV_MYSQL_PASSWORD:-$MYSQL_PASSWORD}"; then
     echo "wait ${WAIT_SECONDS_FOR_MYSQL:-300}s for mysql to become ready"
@@ -158,6 +161,7 @@ Example:
 EOF
             exit 1
     fi
+    test -d /etc/icinga2/features-available || apt install --reintall -y icinga2-common
     cat > /etc/icinga2/features-available/ido-mysql.conf <<EOF
 /**
  * The db_ido_mysql library implements IDO functionality
