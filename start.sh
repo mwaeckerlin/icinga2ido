@@ -210,21 +210,20 @@ object ApiUser "${DIRECTOR_USER:-director}" {
 }
 EOF
     echo "**** Configuration done."
-    echo "IDO database is:"
-    cat /etc/icinga2/features-available/ido-mysql.conf
-    echo "Icinga database:            ${ICINGA_DB:-icinga}"
-    echo "Icinga database user:       ${ICINGA_USER:-icinga}"
-    echo "Icinga database password:   ${ICINGA_PW}"
-    echo "Web database:               ${WEB_DB:-icingaweb}"
-    echo "Web database user:          ${WEB_USER:-icingaweb}"
-    echo "Web database password:      ${WEB_PW}"
-    echo "Director module user:       ${DIRECTOR_USER:-director}"
-    echo "Director module password:   ${DIRECTOR_PW}"
-    echo "Director database:          ${DIRECTOR_DB:-director}"
-    echo "Director database user:     ${DIRECTOR_USER:-director}"
-    echo "Director database password: ${DIRECTOR_PW}"
-    echo "Director endpoint:          $(ls /etc/icinga2/pki | sed -n 's/.key//p')"
     touch /etc/icinga2/.ready
 fi
+echo "Icinga database:            ${ICINGA_DB:-icinga}"
+echo "Icinga database user:       ${ICINGA_USER:-icinga}"
+echo "Icinga database password:   ${ICINGA_PW}"
+echo "Web database:               ${WEB_DB:-icingaweb}"
+echo "Web database user:          ${WEB_USER:-icingaweb}"
+echo "Web database password:      ${WEB_PW}"
+echo "Director module user:       ${DIRECTOR_USER:-director}"
+echo "Director module password:   ${DIRECTOR_PW}"
+echo "Director database:          ${DIRECTOR_DB:-director}"
+echo "Director database user:     ${DIRECTOR_USER:-director}"
+echo "Director database password: ${DIRECTOR_PW}"
+echo "Director endpoint:          $(ls /etc/icinga2/pki | sed -n 's/.key//p')"
 echo "starting icinga2"
+! test -e /run/icinga2/icinga2.pid || rm /run/icinga2/icinga2.pid
 /usr/sbin/icinga2 --no-stack-rlimit daemon -e /var/log/icinga2/icinga2.err
