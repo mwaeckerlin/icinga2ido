@@ -122,26 +122,25 @@ trap 'traperror "$? ${PIPESTATUS[@]}" $LINENO $BASH_LINENO "$BASH_COMMAND" "${FU
 ###########################################################################################
 
 # restore file structure in case an empty volume is mounted
-test -d /etc/icinga2/features-available || apt install --reinstall -y icinga2-common
+test -d /etc/icinga2/features-available || apt -o Dpkg::Options::="--force-confmiss" install --reinstall $(dpkg -S /etc/icinga2 | sed 's,:.*,,g')
 
 # wait for mysql to become ready
-if test -n "${MYSQL_ENV_MYSQL_PASSWORD:-$MYSQL_PASSWORD}"; then
+mysql=0
+if test -n "${MYSQL_ENV_MYSQL_ROOT_PASSWORD:-${MYSQL_ROOT_PASSWORD}}"; then
     echo "wait ${WAIT_SECONDS_FOR_MYSQL:-300}s for mysql to become ready"
     for ((i=0; i<${WAIT_SECONDS_FOR_MYSQL:-300}; ++i)); do
-        if mysql -e "select 1" -h mysql -u "${MYSQL_ENV_MYSQL_USER:-${MYSQL_USER:-icinga}}" -p"${MYSQL_ENV_MYSQL_PASSWORD:-$MYSQL_PASSWORD}" "${MYSQL_ENV_MYSQL_DATABASE:-${MYSQL_DATABASE:-icinga}}" 2> /dev/null > /dev/null; then
+        if mysql -e "select 1" -h mysql -u root -p"${MYSQL_ENV_MYSQL_ROOT_PASSWORD:-${MYSQL_ROOT_PASSWORD}}" 2> /dev/null > /dev/null; then
             echo "mysql is ready"
+            mysql=1
             break;
         fi
         sleep 1
     done
 fi
+if test $mysql -eq 0; then
+    cat 1>&2 <<EOF
+**** ERROR: mysql database not found
 
-if test -e /firstrun; then
-    echo "Configuration of Icinga ..."
-    if test -z "${MYSQL_ENV_MYSQL_PASSWORD:-${MYSQL_PASSWORD}}" -o \
-            -z "${MYSQL_ENV_MYSQL_ROOT_PASSWORD:-${MYSQL_ROOT_PASSWORD}}"; then
-        cat 1>&2 <<EOF
-**** no valid mysql configuration found"
       - you must link to a MySQL docker container and name it mysql
         e.g. --link mysql-server:mysql
       - mysql server must have a database configured
@@ -150,18 +149,37 @@ Example:
 
   docker run -d --restart always --name icinga-mysql \\
              -e MYSQL_ROOT_PASSWORD=$(pwgen 20 1) \\
-             -e MYSQL_DATABASE=icinga \\
-             -e MYSQL_USER=icinga \\
-             -e MYSQL_PASSWORD=$(pwgen 20 1) \\
          mysql
   docker run -d --restart always --name icinga \\
              --link icinga-mysql:mysql \\
          mwaeckerlin/icinga2ido
 
 EOF
-            exit 1
+    exit 1
+fi
+
+if test -e /firstrun; then
+    echo "Configuration of Icinga ..."
+    test -d /etc/icinga2/features-available || apt install --reinstall -y icinga2-common
+    if test -z "${ICINGA_PW}"; then
+        ICINGA_PW=$(pwgen 40 1)
     fi
-    test -d /etc/icinga2/features-available || apt install --reintall -y icinga2-common
+    if test -z "${WEB_PW}"; then
+        WEB_PW=$(pwgen 40 1)
+    fi
+    if test -z "${DIRECTOR_PW}"; then
+        DIRECTOR_PW=$(pwgen 40 1)
+    fi
+    mysql -h mysql -u root -p"${MYSQL_ENV_MYSQL_ROOT_PASSWORD:-${MYSQL_ROOT_PASSWORD}}" <<EOF
+CREATE DATABASE ${ICINGA_DB:-icinga} CHARACTER SET 'utf8';
+CREATE DATABASE ${WEB_DB:-icingaweb} CHARACTER SET 'utf8';
+CREATE DATABASE ${DIRECTOR_DB:-director} CHARACTER SET 'utf8';
+GRANT ALL ON ${ICINGA_DB:-icinga}.* TO ${ICINGA_USER:-icinga}@'%' IDENTIFIED BY '${ICINGA_PW}';
+GRANT ALL ON ${WEB_DB:-icingaweb}.* TO ${WEB_USER:-director}@'%' IDENTIFIED BY '${WEB_PW}';
+GRANT ALL ON ${DIRECTOR_DB:-director}.* TO ${DIRECTOR_USER:-director}@'%' IDENTIFIED BY '${DIRECTOR_PW}';
+FLUSH PRIVILEGES;
+EOF
+    mysql -h mysql -u "${ICINGA_USER:-icinga}" -p"${ICINGA_PW}" "${ICINGA_DB:-icinga}" < /usr/share/icinga2-ido-mysql/schema/mysql.sql
     cat > /etc/icinga2/features-available/ido-mysql.conf <<EOF
 /**
  * The db_ido_mysql library implements IDO functionality
@@ -171,36 +189,18 @@ EOF
 library "db_ido_mysql"
 
 object IdoMysqlConnection "ido-mysql" {
-  user = "${MYSQL_ENV_MYSQL_USER:-${MYSQL_USER:-icinga}}",
-  password = "${MYSQL_ENV_MYSQL_PASSWORD:-${MYSQL_PASSWORD}}",
+  user = "${ICINGA_USER:-icinga}",
+  password = "${ICINGA_PW}",
   host = "mysql",
-  database = "${MYSQL_ENV_MYSQL_DATABASE:-${MYSQL_DATABASE:-icinga}}"
+  database = "${ICINGA_DB:-icinga}"
 }
 EOF
-    mysql -h mysql -u ${MYSQL_ENV_MYSQL_USER:-${MYSQL_USER:-icinga}} -p${MYSQL_ENV_MYSQL_PASSWORD:-${MYSQL_PASSWORD}} ${MYSQL_ENV_MYSQL_DATABASE:-${MYSQL_DATABASE:-icinga}} < /usr/share/icinga2-ido-mysql/schema/mysql.sql
     chown nagios.nagios /etc/icinga2/features-available/ido-mysql.conf
     chmod go= /etc/icinga2/features-available/ido-mysql.conf
     icinga2 feature enable ido-mysql
     icinga2 feature enable command
     test -d /run/icinga2/cmd || mkdir -p /run/icinga2/cmd
     chown -R nagios.nagios /run/icinga2/
-    rm  /firstrun
-    echo "**** Configuration done."
-    echo "IDO database is:"
-    cat /etc/icinga2/features-available/ido-mysql.conf
-    if test -z "${DIRECTOR_PW}"; then
-        DIRECTOR_PW=$(pwgen 20 1)
-    fi
-    if test -z "${WEB_PW}"; then
-        WEB_PW=$(pwgen 20 1)
-    fi
-    mysql -h mysql -u root -p"${MYSQL_ENV_MYSQL_ROOT_PASSWORD:-${MYSQL_ROOT_PASSWORD}}" <<EOF
-CREATE DATABASE ${DIRECTOR_DB:-director} CHARACTER SET 'utf8';
-CREATE DATABASE ${WEB_DB:-icingaweb} CHARACTER SET 'utf8';
-GRANT ALL ON ${DIRECTOR_DB:-director}.* TO ${DIRECTOR_USER:-director}@'%' IDENTIFIED BY '${DIRECTOR_PW}';
-GRANT ALL ON ${WEB_DB:-icingaweb}.* TO ${WEB_USER:-director}@'%' IDENTIFIED BY '${WEB_PW}';
-FLUSH PRIVILEGES;
-EOF
     icinga2 api setup
     cat >> /etc/icinga2/conf.d/api-users.conf <<EOF
 object ApiUser "${DIRECTOR_USER:-director}" {
@@ -208,6 +208,13 @@ object ApiUser "${DIRECTOR_USER:-director}" {
   permissions = [ "*" ]
 }
 EOF
+    rm  /firstrun
+    echo "**** Configuration done."
+    echo "IDO database is:"
+    cat /etc/icinga2/features-available/ido-mysql.conf
+    echo "Icinga database:            ${ICINGA_DB:-icinga}"
+    echo "Icinga database user:       ${ICINGA_USER:-icinga}"
+    echo "Icinga database password:   ${ICINGA_PW}"
     echo "Web database:               ${WEB_DB:-icingaweb}"
     echo "Web database user:          ${WEB_USER:-icingaweb}"
     echo "Web database password:      ${WEB_PW}"
