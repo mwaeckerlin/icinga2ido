@@ -226,4 +226,5 @@ echo "Director database password: ${DIRECTOR_PW}"
 echo "Director endpoint:          $(ls /etc/icinga2/pki | sed -n 's/.key//p')"
 echo "starting icinga2"
 chown -R nagios.nagios /run/icinga2
+chmod ugo+rw /var/volumes/icinga/cmd/icinga2.cmd
 /usr/sbin/icinga2 --no-stack-rlimit daemon -e /var/log/icinga2/icinga2.err
