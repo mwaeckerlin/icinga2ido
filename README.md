@@ -15,9 +15,12 @@ Usage
         docker run -d --restart unless-stopped --name icinga-volumes \
                mwaeckerlin/icinga2ido sleep infinity
         docker run -d --restart unless-stopped --name icinga \
+                   --hostname icinga
                    --link icinga-mysql:mysql \
                    --volumes-from icinga-volumes \
                mwaeckerlin/icinga2ido
+
+Please note: If you don't specify a host name, then you get a random hostname on each re-creation of the container. Then the api certificates are no more valid and the service refuses to start. Als the hostname should be the same as the name to keep it simple.
 
 See the log to get the database configuration, users and passwords:
 

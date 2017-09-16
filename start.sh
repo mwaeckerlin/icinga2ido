@@ -160,6 +160,7 @@ fi
 
 if ! test -e /etc/icinga2/.ready; then
     echo "Configuration of Icinga ..."
+    rm /etc/icinga2/conf.d/hosts.conf
     test -d /etc/icinga2/features-available || apt install --reinstall -y icinga2-common
     if test -z "${ICINGA_PW}"; then
         ICINGA_PW=$(pwgen 40 1)
