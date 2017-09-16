@@ -18,7 +18,6 @@ RUN echo "deb http://packages.icinga.org/ubuntu icinga-$(lsb_release -sc) main" 
 RUN apt-get update -y
 RUN DEBIAN_FRONTEND=noninteractive apt-get install -y \
       icinga2 icinga2-ido-mysql pwgen
-RUN touch /firstrun
 
 ADD start.sh /start.sh
 CMD /start.sh

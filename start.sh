@@ -158,7 +158,7 @@ EOF
     exit 1
 fi
 
-if test -e /firstrun; then
+if ! test -e /etc/icinga2/.ready; then
     echo "Configuration of Icinga ..."
     test -d /etc/icinga2/features-available || apt install --reinstall -y icinga2-common
     if test -z "${ICINGA_PW}"; then
@@ -208,7 +208,6 @@ object ApiUser "${DIRECTOR_USER:-director}" {
   permissions = [ "*" ]
 }
 EOF
-    rm  /firstrun
     echo "**** Configuration done."
     echo "IDO database is:"
     cat /etc/icinga2/features-available/ido-mysql.conf
@@ -224,6 +223,7 @@ EOF
     echo "Director database user:     ${DIRECTOR_USER:-director}"
     echo "Director database password: ${DIRECTOR_PW}"
     echo "Director endpoint:          $(ls /etc/icinga2/pki | sed -n 's/.key//p')"
+    touch /etc/icinga2/.ready
 fi
 echo "starting icinga2"
 /usr/sbin/icinga2 --no-stack-rlimit daemon -e /var/log/icinga2/icinga2.err
