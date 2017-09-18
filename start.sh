@@ -198,8 +198,6 @@ object IdoMysqlConnection "ido-mysql" {
 EOF
     chown nagios.nagios /etc/icinga2/features-available/ido-mysql.conf
     chmod go= /etc/icinga2/features-available/ido-mysql.conf
-    icinga2 feature enable ido-mysql
-    icinga2 feature enable command
     test -d /run/icinga2/cmd || mkdir -p /run/icinga2/cmd
     chown -R nagios.nagios /run/icinga2/
     icinga2 api setup
@@ -209,6 +207,9 @@ object ApiUser "${DIRECTOR_USER:-director}" {
   permissions = [ "*" ]
 }
 EOF
+    for f in ${FEATURES}; do
+        icinga2 feature enable $f
+    done
     echo "**** Configuration done."
     touch /etc/icinga2/.ready
 fi
@@ -226,5 +227,5 @@ echo "Director database password: ${DIRECTOR_PW}"
 echo "Director endpoint:          $(ls /etc/icinga2/pki | sed -n 's/.key//p')"
 echo "starting icinga2"
 chown -R nagios.nagios /run/icinga2
-chmod ugo+rw /var/volumes/icinga/cmd/icinga2.cmd
+chmod ugo+rw /var/run/icinga2/cmd/icinga2.cmd
 /usr/sbin/icinga2 --no-stack-rlimit daemon -e /var/log/icinga2/icinga2.err
