@@ -213,7 +213,7 @@ EOF
     echo "**** Configuration done."
     touch /etc/icinga2/.ready
 fi
-test -e /var/lib/nagios/.ssh/id_rsa || sudo -Hu nagios ssh-keygen -b 4096 -f /var/lib/nagios/.ssh/id_rsa -N ""
+#test -e /var/lib/nagios/.ssh/id_rsa || sudo -Hu nagios ssh-keygen -b 4096 -f /var/lib/nagios/.ssh/id_rsa -N ""
 echo "Icinga database:            ${ICINGA_DB:-icinga}"
 echo "Icinga database user:       ${ICINGA_USER:-icinga}"
 echo "Icinga database password:   ${ICINGA_PW}"
