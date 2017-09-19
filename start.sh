@@ -213,6 +213,7 @@ EOF
     echo "**** Configuration done."
     touch /etc/icinga2/.ready
 fi
+test -e /var/lib/nagios/.ssh/id_rsa || sudo -Hu nagios ssh-keygen -b 4096 -f /var/lib/nagios/.ssh/id_rsa -N ""
 echo "Icinga database:            ${ICINGA_DB:-icinga}"
 echo "Icinga database user:       ${ICINGA_USER:-icinga}"
 echo "Icinga database password:   ${ICINGA_PW}"
@@ -225,7 +226,13 @@ echo "Director database:          ${DIRECTOR_DB:-director}"
 echo "Director database user:     ${DIRECTOR_USER:-director}"
 echo "Director database password: ${DIRECTOR_PW}"
 echo "Director endpoint:          $(ls /etc/icinga2/pki | sed -n 's/.key//p')"
+echo
+echo "ssh public key:"
+echo "---------------------------------------------------------------"
+cat /var/lib/nagios/.ssh/id_rsa.pub
+echo "---------------------------------------------------------------"
+echo
 echo "starting icinga2"
 chown -R nagios.nagios /run/icinga2
-chmod ugo+rw /var/run/icinga2/cmd/icinga2.cmd
+chmod o+rw /var/run/icinga2/cmd/icinga2.cmd
 /usr/sbin/icinga2 --no-stack-rlimit daemon -e /var/log/icinga2/icinga2.err
