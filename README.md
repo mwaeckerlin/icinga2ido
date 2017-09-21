@@ -12,11 +12,14 @@ Usage
                    -e MYSQL_ROOT_PASSWORD=$(pwgen 20 1) \
                    --volumes-from icinga-mysql-volume \
                mysql
+        docker run -d --restart unless-stopped --name icinga-carbon \
+               mwaeckerlin/carbon-cache
         docker run -d --restart unless-stopped --name icinga-volumes \
                mwaeckerlin/icinga2ido sleep infinity
         docker run -d --restart unless-stopped --name icinga \
                    --hostname icinga
                    --link icinga-mysql:mysql \
+                   --link icinga-carbon:carbon \
                    --volumes-from icinga-volumes \
                mwaeckerlin/icinga2ido
 
@@ -46,6 +49,9 @@ services:
         target: /var/lib/mysql                                                               
     environment:                                                                             
       - MYSQL_ROOT_PASSWORD=cu0thei6lahl6eel0Uxadu5eep1eXei5ceesh0gu
+
+  carbon:
+    image: mwaeckerlin/carbon-cache
 
   icinga:
     image: mwaeckerlin/icinga2ido
