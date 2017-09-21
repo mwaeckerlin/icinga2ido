@@ -207,12 +207,10 @@ object ApiUser "${DIRECTOR_USER:-director}" {
   permissions = [ "*" ]
 }
 EOF
-    for f in ${FEATURES}; do
-        icinga2 feature enable $f
-    done
     echo "**** Configuration done."
     touch /etc/icinga2/.ready
 fi
+icinga2 feature enable ${FEATURES}
 chown -R nagios.nagios /var/lib/nagios
 test -e /var/lib/nagios/.ssh/id_rsa \
     || sudo -Hu nagios ssh-keygen -b 4096 -f /var/lib/nagios/.ssh/id_rsa -N ""
