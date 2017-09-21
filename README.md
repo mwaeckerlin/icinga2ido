@@ -41,16 +41,15 @@ Docker Swarm
 This is an example docker compose file that you can use with `docker stack deploy`:
 
 ```yaml
-version: '3.3'                                                                               
-services:                                                                                    
-                                                                                             
-  mysql:                                                                                     
-    image: mysql                                                                             
-    volumes:                                                                                 
-      - type: bind                                                                           
-        source: /var/volumes/icinga/mysql                                                    
-        target: /var/lib/mysql                                                               
-    environment:                                                                             
+version: '3.3'
+services:
+  mysql:
+    image: mysql
+    volumes:
+      - type: bind
+        source: /var/volumes/icinga/mysql
+        target: /var/lib/mysql
+    environment:
       - MYSQL_ROOT_PASSWORD=cu0thei6lahl6eel0Uxadu5eep1eXei5ceesh0gu
 
   carbon:

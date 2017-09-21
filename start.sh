@@ -211,6 +211,8 @@ EOF
     touch /etc/icinga2/.ready
 fi
 icinga2 feature enable ${FEATURES}
+sed -i 's,\( *\).*host *=.*,\1host = "carbon",' /etc/icinga2/features-available/graphite.conf
+sed -i 's,\( *\).*\(port *=.*\),\1\2,' /etc/icinga2/features-available/graphite.conf
 chown -R nagios.nagios /var/lib/nagios
 test -e /var/lib/nagios/.ssh/id_rsa \
     || sudo -Hu nagios ssh-keygen -b 4096 -f /var/lib/nagios/.ssh/id_rsa -N ""
