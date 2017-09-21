@@ -19,6 +19,8 @@ RUN echo "deb http://packages.icinga.org/ubuntu icinga-$(lsb_release -sc) main" 
 RUN apt-get update -y
 RUN DEBIAN_FRONTEND=noninteractive apt-get install -y \
       icinga2 icinga2-ido-mysql pwgen openssh-client sudo
+RUN sed -i 's,\( *\).*host *=.*,\1host = "carbon",' /etc/icinga2/features-available/graphite.conf
+RUN sed -i 's,\( *\).*\(port *=.*\),\1\2,' /etc/icinga2/features-available/graphite.conf
 
 ADD start.sh /start.sh
 CMD /start.sh
