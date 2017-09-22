@@ -17,10 +17,12 @@ Usage
         docker run -d --restart unless-stopped --name icinga-carbon \
                       --volumes-from icinga-carbon-volume \
                mwaeckerlin/carbon-cache
+        docker run -d --restart unless-stopped --name icinga-graphite \
+                      --volumes-from icinga-carbon-volume \
+               mwaeckerlin/graphite-web
         docker run -d --restart unless-stopped --name icinga-volumes \
                mwaeckerlin/icinga2ido sleep infinity
         docker run -d --restart unless-stopped --name icinga \
-                   --hostname icinga
                    --link icinga-mysql:mysql \
                    --link icinga-carbon:carbon \
                    --volumes-from icinga-volumes \

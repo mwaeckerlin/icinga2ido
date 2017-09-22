@@ -161,15 +161,17 @@ fi
 if ! test -e /etc/icinga2/.ready; then
     echo "Configuration of Icinga ..."
     rm /etc/icinga2/conf.d/hosts.conf
-    test -d /etc/icinga2/features-available || apt install --reinstall -y icinga2-common
     if test -z "${ICINGA_PW}"; then
         ICINGA_PW=$(pwgen 40 1)
+        echo "export ICINGA_PW=$ICINGA_PW" >> /etc/icinga2/.ready.pre
     fi
     if test -z "${WEB_PW}"; then
         WEB_PW=$(pwgen 40 1)
+        echo "export WEB_PW=$WEB_PW" >> /etc/icinga2/.ready.pre
     fi
     if test -z "${DIRECTOR_PW}"; then
         DIRECTOR_PW=$(pwgen 40 1)
+        echo "export DIRECTOR_PW=$DIRECTOR_PW" >> /etc/icinga2/.ready.pre
     fi
     mysql -h mysql -u root -p"${MYSQL_ENV_MYSQL_ROOT_PASSWORD:-${MYSQL_ROOT_PASSWORD}}" <<EOF
 CREATE DATABASE ${ICINGA_DB:-icinga} CHARACTER SET 'utf8';
@@ -208,11 +210,14 @@ object ApiUser "${DIRECTOR_USER:-director}" {
 }
 EOF
     echo "**** Configuration done."
-    touch /etc/icinga2/.ready
+    mv /etc/icinga2/.ready.pre /etc/icinga2/.ready
 fi
+. /etc/icinga2/.ready
 icinga2 feature enable ${FEATURES}
 sed -i 's,\( *\).*host *=.*,\1host = "carbon",' /etc/icinga2/features-available/graphite.conf
 sed -i 's,\( *\).*\(port *=.*\),\1\2,' /etc/icinga2/features-available/graphite.conf
+grep -q 'enable_send_thresholds' /etc/icinga2/features-available/graphite.conf || \
+    sed -i '/port/a  enable_send_thresholds = true' /etc/icinga2/features-available/graphite.conf
 chown -R nagios.nagios /var/lib/nagios
 test -e /var/lib/nagios/.ssh/id_rsa \
     || sudo -Hu nagios ssh-keygen -b 4096 -f /var/lib/nagios/.ssh/id_rsa -N ""
