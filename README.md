@@ -23,6 +23,7 @@ Usage
         docker run -d --restart unless-stopped --name icinga-volumes \
                mwaeckerlin/icinga2ido sleep infinity
         docker run -d --restart unless-stopped --name icinga \
+                   --hostname icinga \
                    --link icinga-mysql:mysql \
                    --link icinga-carbon:carbon \
                    --volumes-from icinga-volumes \

@@ -160,7 +160,7 @@ fi
 
 if ! test -e /etc/icinga2/.ready; then
     echo "Configuration of Icinga ..."
-    rm /etc/icinga2/conf.d/hosts.conf
+    ! test "$KEEP_DEFAULTS" != "1" -a -e /etc/icinga2/conf.d/hosts.conf || rm /etc/icinga2/conf.d/hosts.conf
     if test -z "${ICINGA_PW}"; then
         ICINGA_PW=$(pwgen 40 1)
         echo "export ICINGA_PW=$ICINGA_PW" >> /etc/icinga2/.ready.pre
@@ -241,5 +241,5 @@ echo "---------------------------------------------------------------"
 echo
 echo "starting icinga2"
 chown -R nagios.nagios /run/icinga2
-chmod o+rw /var/run/icinga2/cmd/icinga2.cmd
+! test -f /var/run/icinga2/cmd/icinga2.cmd || chmod o+rw /var/run/icinga2/cmd/icinga2.cmd
 /usr/sbin/icinga2 --no-stack-rlimit daemon -e /var/log/icinga2/icinga2.err

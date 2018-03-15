@@ -12,6 +12,7 @@ ENV DIRECTOR_USER="director"
 ENV DIRECTOR_DB="director"
 ENV DIRECTOR_PW=""
 ENV FEATURES="api checker ido-mysql command checker perfdata graphite"
+ENV KEEP_DEFAULTS="0"
 
 RUN apt-get install -y wget debconf-utils pwgen nmap
 RUN wget -O - http://packages.icinga.org/icinga.key | apt-key add -
