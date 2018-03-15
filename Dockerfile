@@ -14,7 +14,7 @@ ENV DIRECTOR_PW=""
 ENV FEATURES="api checker ido-mysql command checker perfdata graphite"
 ENV KEEP_DEFAULTS="0"
 
-RUN apt-get install -y wget debconf-utils pwgen nmap
+RUN apt-get install -y wget debconf-utils pwgen telnet
 RUN wget -O - http://packages.icinga.org/icinga.key | apt-key add -
 RUN echo "deb http://packages.icinga.org/ubuntu icinga-$(lsb_release -sc) main" > /etc/apt/sources.list.d/icinga-main-trusty.list
 RUN apt-get update -y
